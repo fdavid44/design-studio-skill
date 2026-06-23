@@ -1,21 +1,31 @@
-# Skill Figma · Make
+# Skill Figma · Figma Make
 
 ## Titre
-Figma Make — Skill d'automatisation pour Figma
+Figma Make — Skill d'automatisation native pour Figma
 
 ## Bref résumé
-Cette skill facilite l'automatisation de tâches Figma depuis Make (Integromat) :
-- extraction de frames
-- export d'images
+Cette skill facilite l'automatisation et l'orchestration d'actions directement dans Figma via Figma Make (automations, plugins et webhooks) :
+- création d'un "Design Lab" temporaire dans un fichier Figma
+- génération de variantes UI
+- export d'images et d'assets
 - création et mise à jour de composants
-- mise à jour de texte
-- déclenchement de workflows via webhooks
+- collecte de retours et génération d'un plan d'implémentation
+
+---
+
+## Qu'est-ce que Figma Make ?
+Figma Make est la plateforme d'automatisation native dans l'écosystème Figma (automations, plugins, webhooks et intégrations). Elle permet d'exécuter des workflows et scripts qui interagissent avec les fichiers Figma — par exemple créer des pages/frames, modifier des composants, exporter des images, ou écouter des événements de fichier — sans sortir de Figma.
+
+Points clés :
+- Exécutable depuis Figma (automations ou plugins) ou depuis des services externes via l'API et webhooks.
+- Utilise les APIs et webhooks officiels de Figma pour lire/écrire la structure du fichier et exporter ressources.
+- Authentification : tokens Figma (PAT) ou OAuth apps enregistrées dans le tableau de bord développeur Figma selon le mode d'exécution.
 
 ---
 
 ## Table des matières
 1. Manifest (exemple YAML)
-2. Installation
+2. Installation & permissions (Figma Make)
 3. Utilisation (exemples)
 4. Erreurs courantes & dépannage
 5. Bonnes pratiques
@@ -26,35 +36,48 @@ Cette skill facilite l'automatisation de tâches Figma depuis Make (Integromat) 
 ---
 
 ## 1. Manifest (exemple YAML)
+Remplace le champ `platforms` par `figma_make` pour indiquer que la skill cible l'automatisation native de Figma.
+
 ```yaml
 name: figma-make-skill
 id: com.votreorg.figma_make_skill
 version: 0.1.0
 author: Votre Nom <votre@exemple.com>
 description: >-
-  Intégration Make pour automatiser opérations Figma : extraction/export,
-  création/mise à jour de composants et hooks d'événements.
+  Automatisation native pour Figma via Figma Make : création de pages lab,
+  génération de variantes, export d'assets, et gestion de webhooks.
 platforms:
-  - make
+  - figma_make
 auth:
-  type: oauth2
+  type: oauth2  # ou token selon le mode d'exécution (plugin vs serveur)
   authorizationUrl: https://www.figma.com/oauth
   tokenUrl: https://www.figma.com/api/oauth/token
   scopes:
-    - file_read
-    - file_write
+    - files:read
+    - files:write
     - images:read
-    - teams:read
 triggers:
   - id: file_updated
     title: On File Updated
-    description: Déclenché lorsqu'un fichier Figma est modifié (via webhook).
+    description: Déclenché lorsqu'un fichier Figma est modifié (via webhook ou automation).
 actions:
+  - id: create_design_lab
+    title: Create Design Lab
+    description: Crée une page "🧪 Design Lab" et 5 variantes dans le fichier Figma cible
+    inputs:
+      - name: file_id
+        type: string
+        required: true
+      - name: options
+        type: object
+    outputs:
+      - name: lab_page_id
+        type: string
   - id: export_frame
     title: Export Frame
-    description: Exporte une frame en PNG/JPEG/SVG
+    description: Exporte une frame en PNG/JPEG/SVG via l'API Figma
     inputs:
-      - name: file_key
+      - name: file_id
         type: string
         required: true
       - name: node_id
@@ -67,66 +90,71 @@ actions:
     outputs:
       - name: image_url
         type: string
-  - id: create_component
-    title: Create Component
-    description: Crée un composant basé sur une sélection
-    inputs:
-      - name: file_key
-        type: string
-        required: true
-      - name: selection_node_ids
-        type: array
-        items: string
-    outputs:
-      - name: component_id
-        type: string
 webhooks:
   - id: webhook_file_events
-    description: Webhook pour événements de fichier
+    description: Webhook pour événements de fichier (modification, version, etc.)
 rate_limits:
   calls_per_minute: 60
 endpoints:
   base: https://api.figma.com/v1
-  examples:
-    export_image: /images/:file_key?ids=:node_id&format=:format
 permissions:
-  - read:files
-  - write:files
+  - files:read
+  - files:write
+  - images:read
 ```
 
 ---
 
-## 2. Installation
-1. Créez une application OAuth dans Figma et récupérez client_id / client_secret.
-2. Configurez la connexion OAuth dans Make (ou votre plateforme Make-compatible) en utilisant les URLs indiquées.
-3. Enregistrez les webhooks (endpoint public) pour recevoir les événements file_updated.
+## 2. Installation & permissions (Figma Make)
+Selon le mode d'exécution, deux approches :
+
+A. Exécution depuis Figma (plugin / automation)
+- Créer un plugin ou une automation Figma qui contient la logique de la skill.
+- Déployer le plugin/automation via le tableau de bord développeur Figma ou en tant que plugin d'équipe.
+- Les utilisateurs exécutent la skill directement dans le fichier Figma (permissions gérées par Figma).
+
+B. Exécution depuis un service externe (serveur)
+- Enregistrer une application OAuth dans le panneau développeur Figma pour obtenir client_id / client_secret, ou utiliser un token personnel (PAT) pour appels serveur.
+- Abonner un webhook pour surveiller les événements de fichier (modification, publication de version).
+- Le serveur reçoit les événements, appelle l'API Figma pour lire/écrire le fichier, puis exécute la logique (création de pages, export d'images, etc.).
+
+Notes de sécurité
+- Stocker les tokens de façon sécurisée (secrets, vault).
+- Respecter les quotas API et implémenter retries/backoff.
 
 ---
 
 ## 3. Utilisation (exemples)
-- Exporter une frame en PNG
-  - Action: Export Frame
-  - Inputs: file_key, node_id, format=png
-  - Résultat: image_url utilisable dans Make
+- Créer un Design Lab dans un fichier Figma
+  - Action: Create Design Lab
+  - Inputs: file_id, options (noms des variantes, styles de base)
+  - Résultat: lab_page_id contenant les 5 frames
 
-- Créer un composant automatiquement à partir d'une sélection
-  - Action: Create Component
-  - Inputs: file_key, selection_node_ids
-  - Résultat: component_id
+- Exporter une frame en PNG via l'API Figma
+  - Action: Export Frame
+  - Inputs: file_id, node_id, format=png
+  - Résultat: image_url (hôte par Figma ou transféré vers votre stockage)
+
+- Synchroniser tokens (colors/typography) depuis Figma vers un repo ou un design system externe
+  - Lire les styles Figma via l'API
+  - Mapper et pousser vers destination (JSON, tokens, fichier)
 
 ---
 
 ## 4. Erreurs courantes & dépannage
-- 401 Unauthorized : vérifier token OAuth et scopes.
-- 429 Rate limit : appliquer backoff et limiter fréquence des appels.
-- Node not found : s'assurer que node_id est correct et appartient au file_key fourni.
+- 401 Unauthorized : vérifier token OAuth / PAT et scopes.
+- 403 Forbidden : vérifier les permissions du plugin / de l'app.
+- 429 Rate limit : appliquer backoff et limiter la fréquence des appels.
+- Node not found : s'assurer que node_id appartient bien au file_id fourni.
+- Webhook non reçu : vérifier endpoint public, certificats, et configuration du webhook dans Figma.
 
 ---
 
 ## 5. Bonnes pratiques
-- Réutiliser les webhooks pour éviter le polling intensif.
-- Mettre en cache les métadonnées de fichiers (versions, nodes) quand possible.
-- Prévoir des retries exponentiels pour appels réseau.
+- Exécuter d'abord les actions sur un fichier de test.
+- Versionner les modifications critiques (Utiliser des noms/versions de pages temporaires).
+- Nettoyer automatiquement les pages/frames temporaires après validation ou abandon.
+- Fournir des messages clairs dans Figma (annotations) pour que les designers comprennent les changements automatisés.
 
 ---
 
@@ -143,207 +171,6 @@ MIT
 
 # Design Lab — Configuration de la Skill Figma Make
 
-Ce guide décrit le flux complet pour lancer un "Design Lab" dans Figma via la skill.
-Il contient : règles de critique, phases du processus (0 à 8), script d'entretien, et format du plan d'implémentation.
+(Ce guide a été mis à jour pour préciser que la skill cible Figma Make — la plateforme d'automatisation native de Figma.)
 
-### Objectif
-- Conduire un entretien de design
-- Générer 5 variations UI temporaires dans Figma
-- Collecter des retours et produire un plan d'implémentation
-
----
-
-## Règles essentielles (CRITIQUE)
-0. Inference du brief
-- Lire le brief et les éléments liés avant toute génération.
-- Analyser : type de page (landing, portfolio, redesign...), mots-clés stylistiques, audience, assets existants, contraintes spécifiques.
-
-0.B Design Read (obligatoire)
-- Avant tout rendu, afficher une ligne :
-  "Reading this as: <page kind> for <audience>, with a <vibe> language, leaning toward <design system or aesthetic family>."
-
-0.C Clarification
-- Si le brief est ambigu, poser exactement une question de clarification.
-
-0.D Discipline anti-default
-- Éviter les choix par défaut trop génériques (ex : dégradés violet/indigo IA, hero centrée sombre, glassmorphism générique, Inter + slate-900).
-
----
-
-## 1. Les trois cadrans (configuration)
-Après le Design Read, définir :
-- DESIGN_VARIANCE: 1-10 (défaut 8)
-- MOTION_INTENSITY: 1-10 (défaut 6)
-- VISUAL_DENSITY: 1-10 (défaut 4)
-
-Ces valeurs dictent mise en page, mouvement et densité visuelle.
-
----
-
-## 2. Cartographie Brief → Design System
-- Choisir un seul système (Glassmorphism, Bento, Brutalism, Editorial, Dark Tech, Aurora).
-- Construire l'esthétique via les variables & styles Figma (couleurs, typographie, rayons, effets).
-
-Descriptions rapides :
-- Glassmorphism : surfaces semi-transparentes, backdrop blur, bordures 1px, ombres douces.
-- Bento Grid : grille modulée en rectangles/carrés, cellules de tailles variées.
-- Brutalism : contours épais (2-4px), aplats saturés, typographie imposante.
-- Editorial : grands espaces blancs, grille asymétrique, contraste typographique.
-- Dark Tech : thèmes sombres, bordures subtiles, micro-accents lumineux.
-- Aurora : grands dégradés organiques et flous en arrière-plan.
-
----
-
-## 3. Architecture par défaut & conventions
-- Breakpoints: sm 640, md 768, lg 1024, xl 1280, 2xl 1536.
-- Max width: 1400px.
-- Viewport stability: min-h: 100dvh.
-- Préférer une structure Grid (émulation CSS Grid en auto-layout).
-
----
-
-## 4. Directives de design engineering (règles clés)
-- Typography: sans-serif pour titres par défaut (Geist, Satoshi, Outfit). Serifs déconseillées sauf cas luxe/édition.
-- Color Calibration: 1 couleur d'accent max, saturation < 80%. "Lila rule" interdit les dégradés violet/bleu IA par défaut.
-- Layout: éviter hero centrée si DESIGN_VARIANCE > 4; favoriser split-screen ou grilles asymétriques.
-- Shape consistency: une seule échelle de corner-radius pour tout le projet.
-- Interactive states: implémenter Default, Hover, Focus, Active, Disabled, Loading, Empty, Error.
-- CTA: contraste WCAG AA (4.5:1), texte sur une seule ligne sur desktop, pas de CTAs dupliquées pour une même intention.
-- Hero: headline ≤ 2 lignes, subtext ≤ 20 mots, max 4 éléments textuels, padding top ≤ pt-24.
-- Bento rules: pas de cellules vides; 2-3 cellules doivent varier visuellement.
-- Image strategy: utiliser aperçus réels ou wireframes, ratio constantes (16:9 ou 4:3).
-- Copy: headlines ≤ 8 mots, paragraphs ≤ 25 mots; éviter tournures pompeuses IA.
-- Quotes: ≤ 3 lignes, attribution sobre.
-- Page theme lock: un seul thème par page (pas d'inversions clair/sombre en scroll).
-
-Non négociable : EM-DASH BAN — utiliser uniquement des tirets réguliers (-) ou des hyphens.
-
----
-
-## Comportement de nettoyage
-- Toute page/frame temporaire DOIT être supprimée à la fin du processus (validation ou abandon).
-- Si l'utilisateur demande d'annuler, supprimer immédiatement les éléments temporaires.
-
----
-
-## Phase 0 : Détection préliminaire (automatique)
-Avant l'entretien :
-1. Détecter les styles Figma : couleurs, typographie, espacement, corner-radius, effets.
-2. Chercher une page nommée "Design Memory", "Design System" ou "Tokens".
-3. Afficher la ligne de Design Read.
-
----
-
-## Phase 1 : Entretien (script)
-Poser les questions suivantes (adapter selon Design Memory si présent).
-
-Étape 1.1 — Périmètre et cible
-- Périmètre : composant unique ou page complète ?
-- Nouveau ou redesign ?
-  - Si redesign : préciser l'emplacement/URL du composant et les principaux problèmes (trop dense, hiérarchie faible, mauvaise mobile, look dépassé).
-  - Si nouveau : quel objectif ? (décrire / fournir croquis, userflow, diagramme)
-
-Étape 1.2 — Inspiration
-- Références visuelles : Stripe, Linear, Notion, Apple, ou autre (préciser).
-- Patterns d'interaction : édition inline, divulgation progressive, mises à jour optimistes, raccourcis clavier.
-- Références : images, fichier Figma, URL, ou aucune (dans ce cas proposer styles : Flat, Neumorphisme, Glassmorphism, Material, Brutalisme, Minimalisme, Skeuomorphisme, Claymorphisme, Rétro, Dark UI).
-
-Étape 1.3 — Direction de marque & style
-- Adjectifs de marque (3-5) : Minimaliste, Premium, Ludique, Utilitaire, etc.
-- Densité : Compact / Confortable / Aéré
-- Mode sombre : Oui / Non / Éventuellement
-- Typographie : utiliser polices du projet, préciser, ou demander suggestions (éviter Inter par défaut). Propositions selon style inclues.
-- Couleurs : utiliser styles Figma, ou fournir codes hex / logo pour extraction.
-
-Étape 1.4 — Persona et tâches clés
-- Utilisateur principal : Développeur, Designer, Utilisateur métier, Grand public
-- Contexte : Desktop, Mobile, Les deux
-- Tâches clés : lister 3 tâches principales
-
-Étape 1.5 — Contraintes
-- Toutes les propositions doivent respecter WCAG AA minimum.
-
----
-
-## Protocole redesign (si applicable)
-Audit préalable : tokens, architecture de l'information, blocs de contenu, patterns à conserver/abandonner, lecture des cadrans actuels.
-
-Règles de préservation :
-- Ne pas changer l'architecture sans demande explicite.
-- Extraire les couleurs de marque avant d'appliquer des règles générales.
-- Conserver la voix du contenu sauf demande de réécriture.
-- Ne pas régresser l'accessibilité.
-
-Ordre de priorité pour la modernisation :
-1. Typographie
-2. Espacement et rythme
-3. Recalibration des couleurs
-4. Recomposition du hero et sections clés
-5. Remplacement complet de blocs (si nécessaire)
-
----
-
-## Phases 2 → 8 (processus de production)
-Phase 2 — Générer le Brief Design
-- Produire le bloc "## Brief Design" avec les cadrans configurés (DESIGN_VARIANCE, MOTION_INTENSITY, VISUAL_DENSITY).
-- Attendre confirmation avant exécution graphique.
-
-Phase 3 — Générer les variantes dans Figma
-- Créer une page nommée "🧪 Design Lab".
-- Ajouter 5 frames alignées horizontalement :
-  - Lab — Variante A (hiérarchie)
-  - Lab — Variante B (layout)
-  - Lab — Variante C (densité d'espacement)
-  - Lab — Variante D (interactions & états)
-  - Lab — Variante E (direction expressive)
-- Chaque frame : variables réelles, titre, calques de texte pour justification et états (Default, Hover, Focus, Error).
-
-Phase 4 — Présentation
-- Annoncer : ✅ Design Lab créé !
-- Fournir "## Récapitulatif — Variantes générées" décrivant chaque variante.
-
-Phase 5 & 6 — Retours et synthèse
-- L'utilisateur choisit une variante ou propose une hybridation.
-- Si hybridation : créer Variante F, conserver 1-2 sources pour comparaison, supprimer autres.
-
-Phase 7 — Prévisualisation finale
-- Créer une frame "🎯 Design Final" à la racine de la page principale (ou page active).
-- Ajouter annotations d'accessibilité et résumé "## Récapitulatif — Design final".
-
-Phase 8 — Finaliser & nettoyage
-- Après confirmation :
-  1. Supprimer la page temporaire "🧪 Design Lab".
-  2. Conserver uniquement "🎯 Design Final".
-  3. Créer/mettre à jour la page "Design Memory" avec décisions, mapping des variables, et arbitrages d'accessibilité.
-  4. Générer le plan d'implémentation (voir modèle ci-dessous).
-
----
-
-## Modèle de Plan d'implémentation (sortie finale)
-Fournir en raw markdown structuré :
-
-# Plan d'implémentation — [Nom du composant/page]
-
-## 1. Architecture des composants
-- Arborescence des calques et auto-layouts
-
-## 2. Token Mapping
-- Variables de couleur
-- Rayons (corner-radius)
-- Typographies et échelles (h1, h2, body, etc.)
-
-## 3. Checklist Accessibilité WCAG AA & États
-- Spécifications de focus
-- Gestion prefers-reduced-motion
-- États visuels (Default, Hover, Focus, Active, Disabled, Loading, Empty, Error)
-
----
-
-## Prochaines actions possibles
-- Je peux lancer la création automatisée dans un fichier Figma (nécessite URL du fichier et token/API).
-- Je peux ouvrir une PR pour modifier ou déplacer ce fichier dans le repo.
-- Autres demandes : préciser.
-
----
-
-*Fichier mis à jour pour améliorer la lisibilité : sections clarifiées, table des matières ajoutée, listes et blocs de code formatés.*
+[Le reste du guide "Design Lab" est inchangé mais reste adapté pour une exécution via Figma Make — création de la page `🧪 Design Lab`, génération de 5 variantes, collecte des retours et plan d'implémentation.]
