@@ -1,13 +1,31 @@
 # Skill Figma · Make
+
 ## Titre
 Figma Make — Skill d'automatisation pour Figma
 
 ## Bref résumé
-Cette skill permet d'automatiser des tâches courantes dans Figma depuis Make (Integromat) : extraire des frames, exporter des images, créer des composants, mettre à jour texte, et déclencher des workflows lors de modifications de fichiers Figma.
+Cette skill facilite l'automatisation de tâches Figma depuis Make (Integromat) :
+- extraction de frames
+- export d'images
+- création et mise à jour de composants
+- mise à jour de texte
+- déclenchement de workflows via webhooks
 
 ---
 
-## Manifest (exemple YAML)
+## Table des matières
+1. Manifest (exemple YAML)
+2. Installation
+3. Utilisation (exemples)
+4. Erreurs courantes & dépannage
+5. Bonnes pratiques
+6. Contribution
+7. Licence
+8. Design Lab — Configuration (guide complet)
+
+---
+
+## 1. Manifest (exemple YAML)
 ```yaml
 name: figma-make-skill
 id: com.votreorg.figma_make_skill
@@ -78,347 +96,254 @@ permissions:
 
 ---
 
-## Installation
+## 2. Installation
 1. Créez une application OAuth dans Figma et récupérez client_id / client_secret.
 2. Configurez la connexion OAuth dans Make (ou votre plateforme Make-compatible) en utilisant les URLs indiquées.
 3. Enregistrez les webhooks (endpoint public) pour recevoir les événements file_updated.
 
-## Utilisation (exemples)
+---
+
+## 3. Utilisation (exemples)
 - Exporter une frame en PNG
   - Action: Export Frame
   - Inputs: file_key, node_id, format=png
-  - Résultat: image_url utilisable dans Make (upload, email, stockage)
+  - Résultat: image_url utilisable dans Make
 
 - Créer un composant automatiquement à partir d'une sélection
   - Action: Create Component
   - Inputs: file_key, selection_node_ids
-  - Résultat: component_id que vous pouvez référencer ensuite
+  - Résultat: component_id
 
-## Exemples d'usage Make (scénarios)
-- Lorsqu'un designer pousse une nouvelle version, exporter les assets et les déposer sur un CDN.
-- À chaque mise à jour d'un texte de bouton, générer une entrée de changelog et notifier l'équipe.
-- Automatiser la génération d'images de preview pour une boutique en ligne.
+---
 
-## Schéma des réponses (exemple)
-- Export Frame -> { image_url: "https://s3.../frame123.png", width: 800, height: 600 }
-- Create Component -> { component_id: "123:456", url: "https://www.figma.com/file/..." }
-
-## Erreurs courantes & dépannages
+## 4. Erreurs courantes & dépannage
 - 401 Unauthorized : vérifier token OAuth et scopes.
 - 429 Rate limit : appliquer backoff et limiter fréquence des appels.
 - Node not found : s'assurer que node_id est correct et appartient au file_key fourni.
 
-## Bonnes pratiques
+---
+
+## 5. Bonnes pratiques
 - Réutiliser les webhooks pour éviter le polling intensif.
 - Mettre en cache les métadonnées de fichiers (versions, nodes) quand possible.
 - Prévoir des retries exponentiels pour appels réseau.
 
-## Contribution
+---
+
+## 6. Contribution
 - Forkez le dépôt, créez une branche feature/xxx, ouvrez une PR.
 - Tests: inclure fixtures Figma (IDs factices) et mocks pour l'API.
 
-## Licence
+---
+
+## 7. Licence
 MIT
 
 ---
 
 # Design Lab — Configuration de la Skill Figma Make
 
-Conduis un entretien de design, génère cinq variations d'UI distinctes dans un lab de design temporaire au sein du fichier, collecte les retours et produis un plan d'implémentation. Utilise ce prompt lorsque tu veux explorer des options d'UI, redesigner des composants existants ou créer une nouvelle UI avec plusieurs approches à comparer.
+Ce guide décrit le flux complet pour lancer un "Design Lab" dans Figma via la skill.
+Il contient : règles de critique, phases du processus (0 à 8), script d'entretien, et format du plan d'implémentation.
 
----
-## CRITIQUE : règles de Design à appliquer
-
-0. INFERENCE DU BRIEF (Lis la pièce avant toute chose)
-Avant de toucher au rendu visuel ou de modifier les paramètres, déduis ce que l'utilisateur veut réellement.
-
-0.A Analyse d'abord ces signaux
-Page kind - landing (SaaS / consumer / agency / event), portfolio (dev / designer / creative studio), redesign (preserve vs overhaul), editorial / blog.
-Vibe words used by the user - "minimalist", "calm", "Linear-style", "Awwwards", "brutalist", "premium consumer", "Apple-y", "playful", "serious B2B", "editorial", "agency-y", "glassy", "dark tech".
-Reference signals - URLs they linked, screenshots they pasted, products they named, brands they're competing with.
-Audience - B2B procurement panel vs. design-conscious consumer vs. recruiter scanning a portfolio.
-Brand assets that already exist - logo, color, type, photography. For redesigns, these are starting material, not optional input (see Section 11).
-Quiet constraints - accessibility-first audiences, public-sector, regulated industries, trust-first commerce, kids' products.
-
-0.B Output une ligne de "Design Read" avant de générer
-Avant de générer le moindre écran ou composant, déclare en une ligne : "Reading this as: <page kind> for <audience>, with a <vibe> language, leaning toward <design system or aesthetic family>."
-
-0.C Si le brief est ambigu, pose une seule question, ne devine pas
-Pose exactement une question de clarification - jamais une série de plusieurs questions. Si tu peux déduire le contexte avec confiance, ne demande rien. Déclare simplement ton "design read" et avance.
-
-0.D Discipline Anti-Default
-Ne choisis jamais par défaut : les dégradés violet/indigo typiques de l'IA, une hero section centrée sur un fond sombre texturé (dark mesh), trois cartes de fonctionnalités identiques, du glassmorphism générique, ou le combo Inter + slate-900.
-
-1. LES TROIS CADRANS (Configuration centrale)
-Après le design read, règle trois cadrans. Chaque décision de mise en page et de densité est dictée par ces variables.
-DESIGN_VARIANCE: 1-10 (1 = Symétrie parfaite, 10 = Chaos artistique)
-MOTION_INTENSITY: 1-10 (1 = Statique, 10 = Cinématique / Physique)
-VISUAL_DENSITY: 1-10 (1 = Galerie d'art / Airy, 10 = Cockpit / Données denses)
-Baseline: 8 / 6 / 4. Utilise ces valeurs par défaut à moins que le design read ne les remplace.
-
-2. CARTOGRAPHIE BRIEF → DESIGN SYSTEM
-Une fois que tu as le design read et les cadrans, choisis la bonne base en utilisant les packages officiels ou les utilitaires de variables et de styles disponibles pour l'équipe. Un seul système par projet. Ne mélange pas les systèmes. 
-Les esthétiques (Glassmorphism, Bento, Brutalism, Editorial, Dark tech, Aurora) doivent être construites nativement avec les propriétés de variables et de styles de Figma.
-* **Glassmorphism** : Superposition de surfaces semi-transparentes, backdrop blur prononcé, bordures fines de 1px simulant le reflet de la lumière, et ombres douces et diffuses pour détacher les éléments du fond.
-* **Bento Grid** : Structuration de l'interface en une grille de rectangles et de carrés aux angles arrondis. Chaque cellule compartimente une information ou une fonctionnalité claire, avec des tailles variées pour créer une hiérarchie visuelle asymétrique.
-* **Brutalism / Néo-Brutalisme** : Contours noirs épais (2px à 4px), couleurs vives et saturées en aplat, ombres portées nettes et dures (sans flou), et typographie imposante qui casse délibérément les codes traditionnels.
-* **Editorial** : Grands espaces blancs (espacements aérés), grilles asymétriques épurées, et contraste typographique fort mettant en valeur des titres élégants face à des blocs de texte très structurés.
-* **Dark Tech (Style Linear / Stripe)** : Thématique sombre utilisant des arrière-plans gris très profonds ou noirs, combinés à des bordures subtiles. Utilise des lueurs directionnelles discrètes (gradients de bordure) et des micro-accents lumineux.
-* **Aurora / Dégradés fluides** : Arrière-plans enrichis par de grands dégradés organiques, flous et colorés. Ces formes fluides se superposent en arrière-plan pour apporter de la profondeur et une atmosphère moderne/éthérée.
-
-3. ARCHITECTURE PAR DÉFAUT & CONVENTIONS
-Standardise les breakpoints (sm 640, md 768, lg 1024, xl 1280, 2xl 1536). Contiens les mises en page en utilisant max-w-[1400px]. Viewport Stability : utilise des métriques de layout basées sur min-h-[100dvh]. Grid over Flex-Math : utilise TOUJOURS une émulation de structure CSS Grid dans l'auto-layout.
-
-4. DIRECTIVES DE DESIGN ENGINEERING (Correction des biais)
-4.1 Typography : Les polices sans-serif pour les titres sont appliquées par défaut (Geist, Satoshi, Outfit). Les polices serif sont très fortement déconseillées sauf si explicitement requis par un brief luxe/héritage. Serifs interdites : Fraunces, Instrument Serif. Ajuste l'interlignage (leading) de manière agressive à mesure que la graisse augmente.
-4.2 Color Calibration : Maximum 1 couleur d'accent. Saturation < 80%. THE LILA RULE : L'esthétique des lueurs et dégradés violet/bleu typiques de l'IA est interdite sauf demande contraire. PREMIUM-CONSUMER PALETTE BAN : Le combo warm beige/cream + laiton/argile/oxblood + texte espresso est banni par défaut pour les marques premium.
-4.3 Layout Diversification : Évite les hero sections centrées lorsque DESIGN_VARIANCE > 4. Force le split-screen ou des espaces blancs asymétriques. N'aligne jamais systématiquement le texte à gauche si la mise en page globale tend vers une grille modulaire.
-4.4 Materiality & Shapes : SHAPE CONSISTENCY LOCK : Choisis une seule échelle de corner-radius pour toute la page et respecte-la partout. Une carte imbriquée doit avoir un rayon inférieur à sa carte parente selon la formule logique des rayons concentriques.
-4.5 Interactive UI States : Implémente les cycles complets (Default, Hover, Focus, Active, Disabled, Loading, Empty, Error). Chaque état doit être visible graphiquement par un changement de bordure, d'opacité ou de surélévation (elevation).
-4.6 Boutons et Appels à l'action (CTA) : BUTTON CONTRAST CHECK : Minimum WCAG AA (4.5:1). CTA BUTTON WRAP BAN : Le texte doit tenir sur une seule ligne sur desktop. NO DUPLICATE CTA INTENT : Un seul libellé fonctionnel par intention sur une même page.
-4.7 Layout Discipline : La hero section doit tenir dans le viewport initial (Headline de 2 lignes max, subtext de 20 mots max). Padding supérieur de la hero section à pt-24 max. Maximum 4 éléments textuels dans la hero section. Les sections "Used by" (murs de logos) se placent SOUS la hero section, logos uniquement (pas de labels de catégorie). Navigation sur une seule ligne (hauteur max 80px).
-4.8 Grilles Bento & Répétition : BENTO CELL COUNT RULE : Un nombre exact de cellules pour le contenu, pas de cases vides. Au moins 2 à 3 cellules doivent présenter une variation visuelle de fond ou un spanning asymétrique. Section-Layout-Repetition Ban : Ne réutilise jamais le même style de structure de section sur une même page. EYEBROW RESTRAINT : Maximum 1 eyebrow en majuscules de style mono pour 3 sections. SPLIT-HEADER BAN : Bannis pour les en-têtes de section, utilise des structures verticales (vertical stacks).
-4.9 Image Strategy & Mockups : Pas de fausses captures d'écran construites avec des divs. Utilise des aperçus réels de composants, des structures de type wireframe épurées ou des slots d'images dédiés avec un ratio constant (16:9 ou 4:3).
-4.10 Content Density & Textes : Headlines courtes (≤ 8 mots) + sous-paragraphes courts (≤ 25 mots). Les lignes d'en-tête (hairlines) sur chaque rangée des tableaux de spécifications sont interdites ; utilise des cartes sur 2 colonnes ou des groupes structurés. COPY SELF-AUDIT : Élimine toutes les tournures de texte artificielles, pompeuses ou performatives générées par l'IA.
-4.11 Quotes / Témoignages : Maximum 3 lignes, taille de police légèrement supérieure au corps de texte, avec une attribution propre, sobre et alignée.
-4.12 Page Theme Lock : La page a un seul et unique thème. Les sections ne s'inversent pas (clair/sombre) au milieu du scroll pour simuler un faux dynamisme.
-
-9.G EM-DASH BAN (Non-negotiable)
-Le tiret cadratin (—) et le tiret demi-cadratin (–) utilisés comme séparateurs sont COMPLÈTEMENT interdits dans les headlines, eyebrows, corps de texte, quotes et boutons. Utilise uniquement des tirets réguliers (-) ou des hyphens.
+### Objectif
+- Conduire un entretien de design
+- Générer 5 variations UI temporaires dans Figma
+- Collecter des retours et produire un plan d'implémentation
 
 ---
 
-## CRITIQUE : Comportement de nettoyage et cycle de vie
-Toutes les pages et frames temporaires DOIVENT être supprimées lorsque le processus se termine, que ce soit par validation ou abandon. Si l'utilisateur dit « annuler », « abandonner », « arrêter » ou « laisser tomber », supprime immédiatement les éléments temporaires créés.
+## Règles essentielles (CRITIQUE)
+0. Inference du brief
+- Lire le brief et les éléments liés avant toute génération.
+- Analyser : type de page (landing, portfolio, redesign...), mots-clés stylistiques, audience, assets existants, contraintes spécifiques.
+
+0.B Design Read (obligatoire)
+- Avant tout rendu, afficher une ligne :
+  "Reading this as: <page kind> for <audience>, with a <vibe> language, leaning toward <design system or aesthetic family>."
+
+0.C Clarification
+- Si le brief est ambigu, poser exactement une question de clarification.
+
+0.D Discipline anti-default
+- Éviter les choix par défaut trop génériques (ex : dégradés violet/indigo IA, hero centrée sombre, glassmorphism générique, Inter + slate-900).
 
 ---
 
-## Phase 0 : Détection préliminaire
-Avant de démarrer l'entretien, inspecte automatiquement le fichier Figma :
-1. Détecte les variables de couleur, typographie, espacement, rayons de bordure (corner-radius) et styles d'effets existants.
-2. Cherche une page nommée `Design Memory`, `Design System` ou `Tokens`.
-3. Output la ligne de "Design Read" obligatoire en une seule ligne.
+## 1. Les trois cadrans (configuration)
+Après le Design Read, définir :
+- DESIGN_VARIANCE: 1-10 (défaut 8)
+- MOTION_INTENSITY: 1-10 (défaut 6)
+- VISUAL_DENSITY: 1-10 (défaut 4)
+
+Ces valeurs dictent mise en page, mouvement et densité visuelle.
 
 ---
 
-## Phase 1 : Entretien
-Pose ces questions à l'utilisateur. Adapte-les en fonction de la mémoire design si elle existe.
+## 2. Cartographie Brief → Design System
+- Choisir un seul système (Glassmorphism, Bento, Brutalism, Editorial, Dark Tech, Aurora).
+- Construire l'esthétique via les variables & styles Figma (couleurs, typographie, rayons, effets).
 
-### Étape 1.1 : Périmètre et cible
-
-**Question 1 : Périmètre**
-- « Est-ce qu'on design un composant unique ou une page entière ? »
-  - « Composant » — Un élément UI réutilisable (bouton, carte, formulaire, modale, etc.)
-  - « Page » — Une page ou un écran complet
-
-**Question 2 : Nouveau ou redesign**
-- « S'agit-il d'un nouveau design ou d'un redesign de quelque chose d'existant ? »
-  - « Nouveau » — Créer quelque chose from scratch
-  - « Redesign » — Améliorer un composant/page existant
-
-> Si « Redesign » est sélectionné :
-- « Quel est le nom ou l'emplacement du composant/frame existant dans Figma ? Autrement, pouvez-vous me donner une URL ou des images à analyser ?»
-
-- « Quels sont les principaux problèmes avec le design actuel (ou ce que ce nouveau design devrait éviter) ? » *(choix multiple)*
-  - « Trop encombré/dense » — Surcharge d'information, difficile à parcourir
-  - « Hiérarchie peu claire » — Les actions principales ne sont pas évidentes
-  - « Mauvaise expérience mobile » — Ne fonctionne pas bien sur petit écran
-  - « Look dépassé » — Semble vieux ou incohérent avec la marque
-  
-> Si « Nouveau » est sélectionné :
-- « Quel est l'objectif visé par la création de cette nouvelle page ou de ce nouveau composant ? Décrivez-le moi sous forme textuelle ou avec une image (croquis, UserFlow, diagramme, ...)»
-
-### Étape 1.2 : Inspiration
-
-**Question 1 : Inspiration visuelle**
-- « Quels produits ou marques dois-je prendre comme référence visuelle ? » *(choix multiple)*
-  - « Stripe » — Épuré, minimaliste, rassurant
-  - « Linear » — Dense, orienté clavier, axé développeur
-  - « Notion » — Flexible, centré contenu, ludique
-  - « Apple » — Premium, aéré, raffiné
-  - "Autre" - Précise quelles sont tes références.
-
-> Si l'utilisateur répond "Autres", demande des précisions.
-
-**Question 2 : Inspiration fonctionnelle**
-- « Quels patterns d'interaction dois-je reproduire ? »
-  - « Édition inline » — Modifier sur place sans modales
-  - « Divulgation progressive » — Afficher plus au besoin
-  - « Mises à jour optimistes » — Retour immédiat, synchronisation en arrière-plan
-  - « Raccourcis clavier » — Efficacité pour les utilisateurs avancés
-
-**Question 3 : Références visuelles**
-- « As-tu des références visuelles à me fournir ? Tu peux partager : »
-  - « Images de référence » — Captures d'écran, moodboard, inspiration
-  - « Fichier ou lien Figma existant » — Un design ou un UI kit à analyser
-  - « URL d'un site ou d'une app » — Je l'analyserai pour en extraire le style
-  - « Aucune référence » — Je te proposerai une direction artistique
-
-> Si l'utilisateur choisit « Aucune référence », propose-lui de choisir parmi les styles graphiques suivants) :
->
-> - **Flat Design** — Formes simples, couleurs unies, aucune ombre
-> - **Neumorphisme** — Relief subtil, monochrome doux, effets de lumière intérieure
-> - **Glassmorphisme** — Transparence givrée, flou d'arrière-plan, bordures lumineuses
-> - **Material Design** — Élévations, ombres portées, grille 8px, couleurs vives
-> - **Brutalisme** — Typographie forte, bordures épaisses, contraste radical
-> - **Minimalisme** — Beaucoup d'espace blanc, typographie comme seul ornement
-> - **Skeuomorphisme** — Textures et matières réalistes (cuir, métal, papier)
-> - **Claymorphisme** — Formes gonflées et arrondies, couleurs pastel saturées
-> - **Rétro / Vintage** — Palettes désaturées, typographies d'époque, grain
-> - **Dark UI** — Fonds sombres, accents lumineux, hiérarchie par la lumière
->
-> Demande à l'utilisateur de choisir 1 à 2 styles comme direction artistique principale.
-
-### Étape 1.3 : Direction de marque et de style
-
-**Question 1 : Adjectifs de marque**
-- « Quels 3-5 adjectifs décrivent le ressenti de marque souhaité ? » *(choix multiple)*
-  - « Minimaliste » — Épuré, simple, sans encombrement
-  - « Premium » — Haut de gamme, soigné, raffiné
-  - « Ludique » — Fun, amical, accessible
-  - « Utilitaire » — Fonctionnel, efficace, sans chichis
-
-**Question 2 : Densité**
-- « Quelle densité d'information préfères-tu ? »
-  - « Compact » — Plus d'informations visibles, espacement serré
-  - « Confortable » — Espacement équilibré, lecture facile
-  - « Aéré » — Grands blancs, attention focalisée
-
-**Question 3 : Mode sombre**
-- « Le mode sombre est-il requis ? »
-  - « Oui » — Doit supporter le mode sombre
-  - « Non » — Mode clair uniquement
-  - « Éventuellement » — Si facile, pas obligatoire
-
-**Question 4 : Typographie**
-- « Quelles polices de caractères souhaites-tu utiliser ? »
-  - « Polices du projet » — Utiliser celles déjà définies dans Figma
-  - « Je vais les préciser » — Donne les noms des polices (titres et corps)
-  - « Propose-moi des options » — Je choisis parmi des suggestions
-
-> Si l'utilisateur demande des suggestions, propose des combinaisons selon le style choisi. **Évite Inter comme choix par défaut** (trop générique, c'est le réflexe IA) :
-> - **Moderne / tech** → Geist + Geist Mono, ou Satoshi + JetBrains Mono
-> - **Éditorial / premium** → Cabinet Grotesk + Inter Tight, ou Outfit + IBM Plex Mono
-> - **Humaniste / accessible** → Nunito + Open Sans
-> - **Minimaliste** → DM Sans + DM Mono
-> - **Institutionnel** → Marianne + Spectral *(si projet public français)*
-> - **Inter** → acceptable uniquement si le brief demande explicitement un rendu neutre/standard, ou si le projet est secteur public / accessibilité critique.
-> 
-> **Discipline serif (très déconseillée par défaut) :** Le serif n'est acceptable que si (a) la charte nomme explicitement une police serif, ou (b) la famille esthétique est genuinely éditoriale / luxe / publication et tu peux articuler pourquoi ce serif précis correspond à cette marque précise. Pour tout le reste (agence créative, studio design, marque premium, portfolio), reste sur du **sans-serif display** (Geist Display, Cabinet Grotesk, Satoshi, Outfit, PP Neue Montreal). Les polices `Fraunces` et `Instrument Serif` sont **explicitement interdites** comme choix par défaut.
-> 
-> Demande à l'utilisateur de valider ou préciser la police de titre et la police de corps.
-
-**Question 5 : Couleurs de charte**
-- « Quelles couleurs de charte dois-je utiliser ? »
-  - « Couleurs du projet Figma » — Utiliser les styles de couleur déjà définis
-  - « Je vais les préciser » — Donne les codes hexadécimaux ou les noms
-  - « Fournis le logo » — Je l'analyserai pour en extraire les couleurs dominantes
-  - « Pas de charte définie » — Propose une palette cohérente avec le style choisi
-
-> Si l'utilisateur fournit un logo, analyse-le pour extraire :
-> - La couleur primaire dominante
-> - Une couleur secondaire ou d'accentuation
-> - Les neutres (fond, texte)
->
-> Présente la palette extraite et demande validation avant de l'utiliser.
-
-### Étape 1.4 : Persona et tâches clés
-
-**Question 1 : Utilisateur principal**
-- « Qui est l'utilisateur final principal ? »
-  - « Développeur » — Technique, orienté clavier
-  - « Designer » — Visuel, soucieux des détails
-  - « Utilisateur métier » — Axé efficacité, moins technique
-  - « Grand public » — Public général, niveau technique varié
-
-**Question 2 : Contexte**
-- « Quel est le contexte d'utilisation principal ? »
-  - « Desktop en priorité » — Principalement utilisé sur grands écrans
-  - « Mobile en priorité » — Principalement utilisé sur téléphone
-  - « Les deux » — Doit bien fonctionner sur tous les appareils
-
-**Question 3 : Tâches clés**
-- « Quelles sont les 3 principales tâches que les utilisateurs doivent accomplir ? » *(réponse libre)*
-
-### Étape 1.5 : Contraintes
-
-CRITIQUE : Toutes les propositions faites doivent être accessibles et respecter les spécifications du WCAG au niveau AA minimum.
-
-### Protocole redesign (si applicable)
-
-Si le type détecté est un **redesign**, effectue un audit avant de générer quoi que ce soit :
-
-- **Tokens de marque** — couleurs primaires/accents, pile typographique, traitement du logo, rayons de coins
-- **Architecture de l'information** — arborescence, nav principale, chemins de conversion clés
-- **Blocs de contenu** — ce qui existe, ce qui fonctionne, ce qui est du remplissage
-- **Patterns à conserver** — interactions signature, voix du contenu, héro reconnaissable
-- **Patterns à abandonner** — tells IA, mises en page cassées, imagerie stock générique
-- **Lecture des cadrans actuels** — infère les valeurs `DESIGN_VARIANCE / MOTION_INTENSITY / VISUAL_DENSITY` du site existant. C'est ton point de départ, pas les valeurs de base.
-
-**Règles de préservation :**
-- Ne pas changer l'architecture de l'information sans demande explicite
-- Extraire les couleurs de marque avant d'appliquer toute règle couleur (la marque prime sur les règles génériques)
-- Conserver la voix du contenu, sauf si une réécriture est demandée
-- Ne jamais régresser les acquis d'accessibilité (focus, contraste, navigation clavier)
-
-**Ordre de priorité pour la modernisation :**
-1. Rafraîchissement typographique — plus grand impact visuel, risque minimal
-2. Espacement et rythme — augmenter les paddings de section, corriger le rythme vertical
-3. Recalibration des couleurs — désaturer, unifier les neutres, conserver l'accent de marque
-4. Recomposition du héro et sections clés — restructurer avec les patterns de mise en page
-5. Remplacement complet de blocs — uniquement si le bloc existant est irréparable
-
-### ✅ Récapitulatif de fin de Phase 1
-Affiche le résumé formaté `## Récapitulatif — Entretien design`. Attends la validation explicite de l'utilisateur.
+Descriptions rapides :
+- Glassmorphism : surfaces semi-transparentes, backdrop blur, bordures 1px, ombres douces.
+- Bento Grid : grille modulée en rectangles/carrés, cellules de tailles variées.
+- Brutalism : contours épais (2-4px), aplats saturés, typographie imposante.
+- Editorial : grands espaces blancs, grille asymétrique, contraste typographique.
+- Dark Tech : thèmes sombres, bordures subtiles, micro-accents lumineux.
+- Aurora : grands dégradés organiques et flous en arrière-plan.
 
 ---
 
-## Phase 2 : Générer le Brief Design
-Produis le bloc `## Brief Design` contenant les cadrans techniques configurés (`DESIGN_VARIANCE`, `MOTION_INTENSITY`, `VISUAL_DENSITY`).
-Attends le message de confirmation de l'utilisateur avant de passer à l'exécution graphique.
+## 3. Architecture par défaut & conventions
+- Breakpoints: sm 640, md 768, lg 1024, xl 1280, 2xl 1536.
+- Max width: 1400px.
+- Viewport stability: min-h: 100dvh.
+- Préférer une structure Grid (émulation CSS Grid en auto-layout).
 
 ---
 
-## Phase 3 : Générer les variantes dans Figma Make
-Crée une nouvelle Page nommée `🧪 Design Lab`. À l'intérieur, génère 5 Frames distinctes alignées horizontalement :
-- `Lab — Variante A` (Focus sur la hiérarchie de l'information)
-- `Lab — Variante B` (Exploration du modèle de mise en page / layout)
-- `Lab — Variante C` (Variation de densité d'espacement)
-- `Lab — Variante D` (Modèle d'interaction et états UI)
-- `Lab — Variante E` (Direction expressive et identité de marque)
+## 4. Directives de design engineering (règles clés)
+- Typography: sans-serif pour titres par défaut (Geist, Satoshi, Outfit). Serifs déconseillées sauf cas luxe/édition.
+- Color Calibration: 1 couleur d'accent max, saturation < 80%. "Lila rule" interdit les dégradés violet/bleu IA par défaut.
+- Layout: éviter hero centrée si DESIGN_VARIANCE > 4; favoriser split-screen ou grilles asymétriques.
+- Shape consistency: une seule échelle de corner-radius pour tout le projet.
+- Interactive states: implémenter Default, Hover, Focus, Active, Disabled, Loading, Empty, Error.
+- CTA: contraste WCAG AA (4.5:1), texte sur une seule ligne sur desktop, pas de CTAs dupliquées pour une même intention.
+- Hero: headline ≤ 2 lignes, subtext ≤ 20 mots, max 4 éléments textuels, padding top ≤ pt-24.
+- Bento rules: pas de cellules vides; 2-3 cellules doivent varier visuellement.
+- Image strategy: utiliser aperçus réels ou wireframes, ratio constantes (16:9 ou 4:3).
+- Copy: headlines ≤ 8 mots, paragraphs ≤ 25 mots; éviter tournures pompeuses IA.
+- Quotes: ≤ 3 lignes, attribution sobre.
+- Page theme lock: un seul thème par page (pas d'inversions clair/sombre en scroll).
 
-Chaque frame doit contenir l'UI dessinée avec de vraies variables, une étiquette de titre textuelle, et des calques de texte Figma pour la justification et les états (Default, Hover, Focus, Error). Applique rigoureusement les règles de design (Pas d'em-dash, thème unique, pas de palette premium par défaut, etc.).
-
----
-
-## Phase 4 : Présenter le Design Lab à l'utilisateur
-Affiche le texte d'annonce `✅ Design Lab créé !` suivi du bloc `## Récapitulatif — Variantes générées` décrivant succinctement l'approche de chaque variante :
-- **Variante A** : Focus sur la hiérarchie de l'information.
-- **Variante B** : Exploration du modèle de mise en page / layout.
-- **Variante C** : Variation de densité d'espacement.
-- **Variante D** : Modèle d'interaction et états UI.
-- **Variante E** : Direction expressive et identité de marque.
-Attends le retour de l'utilisateur.
+Non négociable : EM-DASH BAN — utiliser uniquement des tirets réguliers (-) ou des hyphens.
 
 ---
 
-## Phase 5 & 6 : Collecter les retours & Synthèse
-Demande à l'utilisateur de choisir sa variante gagnante ou de formuler une synthèse. 
-Si l'utilisateur demande une hybridation, génère une `Variante F` dans la page `🧪 Design Lab`, conserve 1 ou 2 variantes sources pour comparaison, et supprime les autres. Répète jusqu'à validation.
+## Comportement de nettoyage
+- Toute page/frame temporaire DOIT être supprimée à la fin du processus (validation ou abandon).
+- Si l'utilisateur demande d'annuler, supprimer immédiatement les éléments temporaires.
 
 ---
 
-## Phase 7 : Prévisualisation finale
-Une fois validé, crée une Frame nommée `🎯 Design Final` à la racine de la page principale du projet (ou page active). Elle doit contenir le design propre, finalisé et annoté pour l'accessibilité. Affiche le `## Récapitulatif — Design final` et demande la confirmation finale de clôture.
+## Phase 0 : Détection préliminaire (automatique)
+Avant l'entretien :
+1. Détecter les styles Figma : couleurs, typographie, espacement, corner-radius, effets.
+2. Chercher une page nommée "Design Memory", "Design System" ou "Tokens".
+3. Afficher la ligne de Design Read.
 
 ---
 
-## Phase 8 : Finaliser & Nettoyage
-Dès que l'utilisateur confirme :
-1. **Nettoyage Figma** : Supprime définitivement la page temporaire `🧪 Design Lab`. Ne conserve EXCLUSIVEMENT que la Frame `🎯 Design Final`.
-2. **Mémoire Design (Design Memory)** : Crée ou mets à jour la note ou page `Design Memory` dans le fichier Figma. Consigne de manière immuable : les décisions clés prises, la justification de l'identité retenue, les variables systèmes majeures mappées, et les arbitrages d'accessibilité effectués.
-3. **Plan d'implémentation** : Génère dans le chat le plan d'implémentation finalisé en raw markdown structuré comme suit :
-   - `# Plan d'implémentation — [Nom du composant/page]`
-   - `## 1. Architecture des composants` (Arborescence des calques et auto-layouts)
-   - `## 2. Token Mapping` (Variables de couleur, coins et typographies à appliquer)
-   - `## 3. Checklist Accessibilité WCAG AA & États` (Spécifications de focus et gestion du mouvement réduit / prefers-reduced-motion).
+## Phase 1 : Entretien (script)
+Poser les questions suivantes (adapter selon Design Memory si présent).
+
+Étape 1.1 — Périmètre et cible
+- Périmètre : composant unique ou page complète ?
+- Nouveau ou redesign ?
+  - Si redesign : préciser l'emplacement/URL du composant et les principaux problèmes (trop dense, hiérarchie faible, mauvaise mobile, look dépassé).
+  - Si nouveau : quel objectif ? (décrire / fournir croquis, userflow, diagramme)
+
+Étape 1.2 — Inspiration
+- Références visuelles : Stripe, Linear, Notion, Apple, ou autre (préciser).
+- Patterns d'interaction : édition inline, divulgation progressive, mises à jour optimistes, raccourcis clavier.
+- Références : images, fichier Figma, URL, ou aucune (dans ce cas proposer styles : Flat, Neumorphisme, Glassmorphism, Material, Brutalisme, Minimalisme, Skeuomorphisme, Claymorphisme, Rétro, Dark UI).
+
+Étape 1.3 — Direction de marque & style
+- Adjectifs de marque (3-5) : Minimaliste, Premium, Ludique, Utilitaire, etc.
+- Densité : Compact / Confortable / Aéré
+- Mode sombre : Oui / Non / Éventuellement
+- Typographie : utiliser polices du projet, préciser, ou demander suggestions (éviter Inter par défaut). Propositions selon style inclues.
+- Couleurs : utiliser styles Figma, ou fournir codes hex / logo pour extraction.
+
+Étape 1.4 — Persona et tâches clés
+- Utilisateur principal : Développeur, Designer, Utilisateur métier, Grand public
+- Contexte : Desktop, Mobile, Les deux
+- Tâches clés : lister 3 tâches principales
+
+Étape 1.5 — Contraintes
+- Toutes les propositions doivent respecter WCAG AA minimum.
+
+---
+
+## Protocole redesign (si applicable)
+Audit préalable : tokens, architecture de l'information, blocs de contenu, patterns à conserver/abandonner, lecture des cadrans actuels.
+
+Règles de préservation :
+- Ne pas changer l'architecture sans demande explicite.
+- Extraire les couleurs de marque avant d'appliquer des règles générales.
+- Conserver la voix du contenu sauf demande de réécriture.
+- Ne pas régresser l'accessibilité.
+
+Ordre de priorité pour la modernisation :
+1. Typographie
+2. Espacement et rythme
+3. Recalibration des couleurs
+4. Recomposition du hero et sections clés
+5. Remplacement complet de blocs (si nécessaire)
+
+---
+
+## Phases 2 → 8 (processus de production)
+Phase 2 — Générer le Brief Design
+- Produire le bloc "## Brief Design" avec les cadrans configurés (DESIGN_VARIANCE, MOTION_INTENSITY, VISUAL_DENSITY).
+- Attendre confirmation avant exécution graphique.
+
+Phase 3 — Générer les variantes dans Figma
+- Créer une page nommée "🧪 Design Lab".
+- Ajouter 5 frames alignées horizontalement :
+  - Lab — Variante A (hiérarchie)
+  - Lab — Variante B (layout)
+  - Lab — Variante C (densité d'espacement)
+  - Lab — Variante D (interactions & états)
+  - Lab — Variante E (direction expressive)
+- Chaque frame : variables réelles, titre, calques de texte pour justification et états (Default, Hover, Focus, Error).
+
+Phase 4 — Présentation
+- Annoncer : ✅ Design Lab créé !
+- Fournir "## Récapitulatif — Variantes générées" décrivant chaque variante.
+
+Phase 5 & 6 — Retours et synthèse
+- L'utilisateur choisit une variante ou propose une hybridation.
+- Si hybridation : créer Variante F, conserver 1-2 sources pour comparaison, supprimer autres.
+
+Phase 7 — Prévisualisation finale
+- Créer une frame "🎯 Design Final" à la racine de la page principale (ou page active).
+- Ajouter annotations d'accessibilité et résumé "## Récapitulatif — Design final".
+
+Phase 8 — Finaliser & nettoyage
+- Après confirmation :
+  1. Supprimer la page temporaire "🧪 Design Lab".
+  2. Conserver uniquement "🎯 Design Final".
+  3. Créer/mettre à jour la page "Design Memory" avec décisions, mapping des variables, et arbitrages d'accessibilité.
+  4. Générer le plan d'implémentation (voir modèle ci-dessous).
+
+---
+
+## Modèle de Plan d'implémentation (sortie finale)
+Fournir en raw markdown structuré :
+
+# Plan d'implémentation — [Nom du composant/page]
+
+## 1. Architecture des composants
+- Arborescence des calques et auto-layouts
+
+## 2. Token Mapping
+- Variables de couleur
+- Rayons (corner-radius)
+- Typographies et échelles (h1, h2, body, etc.)
+
+## 3. Checklist Accessibilité WCAG AA & États
+- Spécifications de focus
+- Gestion prefers-reduced-motion
+- États visuels (Default, Hover, Focus, Active, Disabled, Loading, Empty, Error)
+
+---
+
+## Prochaines actions possibles
+- Je peux lancer la création automatisée dans un fichier Figma (nécessite URL du fichier et token/API).
+- Je peux ouvrir une PR pour modifier ou déplacer ce fichier dans le repo.
+- Autres demandes : préciser.
+
+---
+
+*Fichier mis à jour pour améliorer la lisibilité : sections clarifiées, table des matières ajoutée, listes et blocs de code formatés.*
